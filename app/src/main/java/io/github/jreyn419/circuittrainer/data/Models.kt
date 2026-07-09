@@ -15,6 +15,18 @@ data class Exercise(
     val restSeconds: Int = 15,
 )
 
+/**
+ * A reusable exercise saved in the library. Its durations are defaults that get
+ * copied into a workout when the exercise is picked, and stay editable per workout.
+ */
+@Serializable
+data class ExerciseTemplate(
+    val id: String = newId(),
+    val name: String = "",
+    val workSeconds: Int = 40,
+    val restSeconds: Int = 15,
+)
+
 @Serializable
 data class Workout(
     val id: String = newId(),

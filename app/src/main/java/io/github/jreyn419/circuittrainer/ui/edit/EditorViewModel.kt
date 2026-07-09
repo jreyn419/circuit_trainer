@@ -6,6 +6,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.jreyn419.circuittrainer.CircuitTrainerApplication
 import io.github.jreyn419.circuittrainer.data.Exercise
+import io.github.jreyn419.circuittrainer.data.ExerciseTemplate
 import io.github.jreyn419.circuittrainer.data.Workout
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -53,6 +54,17 @@ class EditorViewModel(
             exercises = exercises + Exercise(
                 workSeconds = template?.workSeconds ?: 40,
                 restSeconds = template?.restSeconds ?: 15,
+            )
+        )
+    }
+
+    /** Adds an exercise from the library, copying its default durations. */
+    fun addFromTemplate(template: ExerciseTemplate) {
+        _workout.value = _workout.value.copy(
+            exercises = _workout.value.exercises + Exercise(
+                name = template.name,
+                workSeconds = template.workSeconds,
+                restSeconds = template.restSeconds,
             )
         )
     }
