@@ -31,6 +31,8 @@ No ads, no tracking, no network access. Workouts are stored on-device as a small
   so the display can never drift, freeze, or get stuck at 0.
 - Sound (3-2-1 beeps, phase-change tones) and vibration cues, each individually
   toggleable, plus a configurable get-ready countdown.
+- **Export / import** — back up workouts, the exercise library and settings to a single
+  JSON file from Settings → Data, and restore it on any device (merge or full replace).
 - Keeps the screen on during a session; survives screen rotation without losing progress.
 - Material 3 UI with dark theme and dynamic color (Android 12+).
 
