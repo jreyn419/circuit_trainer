@@ -36,8 +36,10 @@ Requires JDK 17+ and the Android SDK (set `ANDROID_HOME`, or build in Android St
 # APK lands in app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Every push also builds a debug APK in CI (GitHub Actions → Build → `circuit-trainer-debug`
-artifact), so you can grab an installable APK from the Actions tab without a local setup.
+You don't need a local setup to get an APK: every push builds one in CI and publishes it
+to the rolling [**latest** release](../../releases/tag/latest) (`circuit-trainer.apk`).
+Download it on your phone, allow installs from your browser, and you're set. Each CI run
+also keeps the APK as a `circuit-trainer-debug` artifact under the Actions tab.
 
 ## Project layout
 

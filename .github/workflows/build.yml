@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,3 +29,24 @@ jobs:
         with:
           name: circuit-trainer-debug
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      # Keep a rolling "latest" release so the newest APK is always one click away
+      # at .../releases/tag/latest instead of buried in per-run artifacts.
+      - name: Publish rolling release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk circuit-trainer.apk
+          notes="Automated debug build from commit ${GITHUB_SHA::7} on branch ${GITHUB_REF_NAME}."
+          if gh release view latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload latest circuit-trainer.apk --clobber --repo "$GITHUB_REPOSITORY"
+            gh release edit latest --notes "$notes" --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create latest circuit-trainer.apk \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --prerelease \
+              --title "Latest build" \
+              --notes "$notes"
+          fi
