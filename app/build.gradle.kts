@@ -17,6 +17,17 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        // Checked-in debug keystore so every build (including CI) is signed with the
+        // same key - newer APKs from the release page install over older ones.
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
