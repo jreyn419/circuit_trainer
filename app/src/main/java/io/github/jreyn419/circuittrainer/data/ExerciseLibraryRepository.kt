@@ -37,6 +37,24 @@ class ExerciseLibraryRepository(context: Context) {
         store.persistAsync(_templates.value)
     }
 
+    /** Replaces the whole library (backup restore). */
+    fun replaceAll(items: List<ExerciseTemplate>) {
+        _templates.value = items
+        store.persistAsync(_templates.value)
+    }
+
+    /** Upserts each item by id, keeping everything else (backup merge). */
+    fun mergeById(items: List<ExerciseTemplate>) {
+        if (items.isEmpty()) return
+        val merged = _templates.value.toMutableList()
+        for (item in items) {
+            val index = merged.indexOfFirst { it.id == item.id }
+            if (index >= 0) merged[index] = item else merged += item
+        }
+        _templates.value = merged
+        store.persistAsync(_templates.value)
+    }
+
     /** Finds a template whose name matches (case-insensitive, trimmed), if any. */
     fun findByName(name: String): ExerciseTemplate? {
         val trimmed = name.trim()

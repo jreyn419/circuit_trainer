@@ -4,7 +4,9 @@ import android.content.Context
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class Settings(
     val soundEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true,

@@ -39,6 +39,24 @@ class WorkoutRepository(context: Context) {
         store.persistAsync(_workouts.value)
     }
 
+    /** Replaces the whole list (backup restore). */
+    fun replaceAll(items: List<Workout>) {
+        _workouts.value = items
+        store.persistAsync(_workouts.value)
+    }
+
+    /** Upserts each item by id, keeping everything else (backup merge). */
+    fun mergeById(items: List<Workout>) {
+        if (items.isEmpty()) return
+        val merged = _workouts.value.toMutableList()
+        for (item in items) {
+            val index = merged.indexOfFirst { it.id == item.id }
+            if (index >= 0) merged[index] = item else merged += item
+        }
+        _workouts.value = merged
+        store.persistAsync(_workouts.value)
+    }
+
     fun duplicate(id: String) {
         val original = workout(id) ?: return
         val copy = original.copy(
