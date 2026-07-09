@@ -12,9 +12,13 @@ No ads, no tracking, no network access. Workouts are stored on-device as a small
   time, instead of one static duration for the whole session.
 - **Rounds** — repeat the whole circuit any number of times, with a configurable break
   between rounds.
-- **Exercise library** — create reusable exercises (with default work/rest times) in a
-  dedicated screen, then drop them into any workout with one tap from the "Add exercise"
-  sheet. Exercises in a workout can also be bookmarked back into the library.
+- **Exercise library** — create reusable exercises (with default work/rest times and
+  optional how-to descriptions) in a dedicated screen, then multi-select several at once
+  from the "Add exercise" sheet; they land in the workout in the order you tapped them.
+  Exercises in a workout can be bookmarked back into the library, with an
+  overwrite/save-as-new prompt when a same-named entry already exists.
+- **Exercise descriptions in the player** — tap the info icon during a workout to see
+  the current (or upcoming) exercise's form cues without stopping the timer.
 - **Big, clear workout player** — color-coded phases (get ready / work / rest), a large
   countdown ring, "up next" preview, and oversized controls that are easy to hit
   mid-burpee. Skip forward/back, add 10 seconds, pause any time.

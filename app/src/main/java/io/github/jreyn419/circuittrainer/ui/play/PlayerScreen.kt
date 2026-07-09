@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -32,6 +33,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -197,6 +199,19 @@ private fun RunningContent(
         PhaseKind.ROUND_REST -> "ROUND BREAK"
         PhaseKind.PREP -> "GET READY"
     }
+    // During work: describe the current exercise. During breaks: preview the next one.
+    val infoSegment = if (segment.kind == PhaseKind.WORK) segment else state.nextWorkSegment
+    var showInfoDialog by rememberSaveable { mutableStateOf(false) }
+    if (showInfoDialog && infoSegment != null) {
+        AlertDialog(
+            onDismissRequest = { showInfoDialog = false },
+            title = { Text(infoSegment.title) },
+            text = { Text(infoSegment.description) },
+            confirmButton = {
+                TextButton(onClick = { showInfoDialog = false }) { Text("Close") }
+            },
+        )
+    }
 
     Column(
         modifier = modifier.padding(horizontal = 24.dp),
@@ -259,13 +274,29 @@ private fun RunningContent(
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.displayLarge,
                 )
-                Text(
-                    text = if (segment.kind == PhaseKind.WORK) segment.title
-                    else state.nextWorkTitle?.let { "Up next: $it" } ?: "Almost done!",
-                    style = MaterialTheme.typography.titleLarge,
-                    textAlign = TextAlign.Center,
-                    maxLines = 2,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = if (segment.kind == PhaseKind.WORK) segment.title
+                        else state.nextWorkTitle?.let { "Up next: $it" } ?: "Almost done!",
+                        style = MaterialTheme.typography.titleLarge,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if (infoSegment != null && infoSegment.description.isNotBlank()) {
+                        IconButton(
+                            onClick = { showInfoDialog = true },
+                            modifier = Modifier.size(32.dp),
+                        ) {
+                            Icon(
+                                Icons.Outlined.Info,
+                                contentDescription = "How to do ${infoSegment.title}",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
             }
         }
 

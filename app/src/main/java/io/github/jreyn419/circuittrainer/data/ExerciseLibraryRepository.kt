@@ -37,29 +37,45 @@ class ExerciseLibraryRepository(context: Context) {
         store.persistAsync(_templates.value)
     }
 
-    /**
-     * Saves an exercise from a workout into the library. If a template with the
-     * same name already exists (case-insensitive), its durations are updated.
-     */
-    fun saveFromWorkout(name: String, workSeconds: Int, restSeconds: Int) {
+    /** Finds a template whose name matches (case-insensitive, trimmed), if any. */
+    fun findByName(name: String): ExerciseTemplate? {
         val trimmed = name.trim()
-        if (trimmed.isEmpty()) return
-        val existing = _templates.value.firstOrNull { it.name.equals(trimmed, ignoreCase = true) }
-        if (existing != null) {
-            upsert(existing.copy(workSeconds = workSeconds, restSeconds = restSeconds))
-        } else {
-            upsert(ExerciseTemplate(name = trimmed, workSeconds = workSeconds, restSeconds = restSeconds))
-        }
+        if (trimmed.isEmpty()) return null
+        return _templates.value.firstOrNull { it.name.equals(trimmed, ignoreCase = true) }
     }
 
     private fun defaultTemplates(): List<ExerciseTemplate> = listOf(
-        ExerciseTemplate(name = "Jumping jacks", workSeconds = 45, restSeconds = 15),
-        ExerciseTemplate(name = "Push-ups", workSeconds = 30, restSeconds = 20),
-        ExerciseTemplate(name = "Squats", workSeconds = 45, restSeconds = 15),
-        ExerciseTemplate(name = "Plank", workSeconds = 60, restSeconds = 20),
-        ExerciseTemplate(name = "Lunges", workSeconds = 40, restSeconds = 20),
-        ExerciseTemplate(name = "Mountain climbers", workSeconds = 30, restSeconds = 20),
-        ExerciseTemplate(name = "Burpees", workSeconds = 30, restSeconds = 30),
-        ExerciseTemplate(name = "High knees", workSeconds = 30, restSeconds = 15),
+        ExerciseTemplate(
+            name = "Jumping jacks", workSeconds = 45, restSeconds = 15,
+            description = "Jump while spreading your legs and swinging your arms overhead, then jump back to standing.",
+        ),
+        ExerciseTemplate(
+            name = "Push-ups", workSeconds = 30, restSeconds = 20,
+            description = "Keep your body in a straight line from head to heels; lower your chest to just above the floor.",
+        ),
+        ExerciseTemplate(
+            name = "Squats", workSeconds = 45, restSeconds = 15,
+            description = "Feet shoulder-width apart, chest up. Sit back and down until your thighs are parallel to the floor.",
+        ),
+        ExerciseTemplate(
+            name = "Plank", workSeconds = 60, restSeconds = 20,
+            description = "Forearms on the floor, body straight. Brace your core and don't let your hips sag.",
+        ),
+        ExerciseTemplate(
+            name = "Lunges", workSeconds = 40, restSeconds = 20,
+            description = "Step forward and lower until both knees are at 90 degrees. Alternate legs.",
+        ),
+        ExerciseTemplate(
+            name = "Mountain climbers", workSeconds = 30, restSeconds = 20,
+            description = "From a push-up position, drive your knees toward your chest one at a time, quickly.",
+        ),
+        ExerciseTemplate(
+            name = "Burpees", workSeconds = 30, restSeconds = 30,
+            description = "Squat down, kick back into a push-up, jump your feet forward and leap up with arms overhead.",
+        ),
+        ExerciseTemplate(
+            name = "High knees", workSeconds = 30, restSeconds = 15,
+            description = "Run in place, driving your knees up to hip height. Stay light on your feet.",
+        ),
     )
 }

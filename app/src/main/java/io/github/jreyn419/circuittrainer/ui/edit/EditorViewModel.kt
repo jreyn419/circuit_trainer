@@ -21,7 +21,7 @@ class EditorViewModel(
 
     val isNew = workoutId == null
     private val initial: Workout = workoutId?.let { repository.workout(it) }
-        ?: Workout(name = "", exercises = listOf(Exercise()))
+        ?: Workout(name = "", exercises = emptyList())
 
     private val _workout = MutableStateFlow(initial)
     val workout: StateFlow<Workout> = _workout.asStateFlow()
@@ -46,26 +46,31 @@ class EditorViewModel(
         )
     }
 
-    fun addExercise() {
+    /** Adds a blank exercise and returns its id so the UI can expand it for editing. */
+    fun addExercise(): String {
         val exercises = _workout.value.exercises
         // New exercises inherit the durations of the previous one - usually what you want.
-        val template = exercises.lastOrNull()
-        _workout.value = _workout.value.copy(
-            exercises = exercises + Exercise(
-                workSeconds = template?.workSeconds ?: 40,
-                restSeconds = template?.restSeconds ?: 15,
-            )
+        val previous = exercises.lastOrNull()
+        val exercise = Exercise(
+            workSeconds = previous?.workSeconds ?: 40,
+            restSeconds = previous?.restSeconds ?: 15,
         )
+        _workout.value = _workout.value.copy(exercises = exercises + exercise)
+        return exercise.id
     }
 
-    /** Adds an exercise from the library, copying its default durations. */
-    fun addFromTemplate(template: ExerciseTemplate) {
+    /** Adds library exercises in the given order, copying their defaults. */
+    fun addFromTemplates(templates: List<ExerciseTemplate>) {
+        if (templates.isEmpty()) return
         _workout.value = _workout.value.copy(
-            exercises = _workout.value.exercises + Exercise(
-                name = template.name,
-                workSeconds = template.workSeconds,
-                restSeconds = template.restSeconds,
-            )
+            exercises = _workout.value.exercises + templates.map { template ->
+                Exercise(
+                    name = template.name,
+                    description = template.description,
+                    workSeconds = template.workSeconds,
+                    restSeconds = template.restSeconds,
+                )
+            }
         )
     }
 
