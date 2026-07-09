@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.jreyn419.circuittrainer.ui.edit.EditWorkoutScreen
 import io.github.jreyn419.circuittrainer.ui.home.HomeScreen
+import io.github.jreyn419.circuittrainer.ui.library.ExerciseLibraryScreen
 import io.github.jreyn419.circuittrainer.ui.play.PlayerScreen
 import io.github.jreyn419.circuittrainer.ui.settings.SettingsScreen
 
@@ -20,6 +21,7 @@ fun CircuitTrainerApp(navController: NavHostController = rememberNavController()
                 onCreateWorkout = { navController.navigate("edit/$NEW_WORKOUT_ID") },
                 onEditWorkout = { id -> navController.navigate("edit/$id") },
                 onPlayWorkout = { id -> navController.navigate("play/$id") },
+                onOpenExercises = { navController.navigate("exercises") },
                 onOpenSettings = { navController.navigate("settings") },
             )
         }
@@ -28,7 +30,11 @@ fun CircuitTrainerApp(navController: NavHostController = rememberNavController()
             EditWorkoutScreen(
                 workoutId = id?.takeUnless { it == NEW_WORKOUT_ID },
                 onBack = { navController.popBackStack() },
+                onOpenLibrary = { navController.navigate("exercises") },
             )
+        }
+        composable("exercises") {
+            ExerciseLibraryScreen(onBack = { navController.popBackStack() })
         }
         composable("play/{workoutId}") { entry ->
             val id = entry.arguments?.getString("workoutId").orEmpty()

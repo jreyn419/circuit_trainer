@@ -1,17 +1,10 @@
 package io.github.jreyn419.circuittrainer.data
 
 import android.content.Context
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.json.Json
 import java.io.File
 
 /**
@@ -20,16 +13,12 @@ import java.io.File
  */
 class WorkoutRepository(context: Context) {
 
-    private val file = File(context.filesDir, "workouts.json")
-    private val json = Json {
-        ignoreUnknownKeys = true
-        prettyPrint = true
-        encodeDefaults = true
-    }
-    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val writeMutex = Mutex()
+    private val store = JsonListFile(
+        File(context.filesDir, "workouts.json"),
+        ListSerializer(Workout.serializer()),
+    )
 
-    private val _workouts = MutableStateFlow(loadFromDisk())
+    private val _workouts = MutableStateFlow(store.loadOr { sampleWorkouts() })
     val workouts: StateFlow<List<Workout>> = _workouts.asStateFlow()
 
     fun workout(id: String): Workout? = _workouts.value.firstOrNull { it.id == id }
@@ -42,12 +31,12 @@ class WorkoutRepository(context: Context) {
         } else {
             current + workout
         }
-        persist()
+        store.persistAsync(_workouts.value)
     }
 
     fun delete(id: String) {
         _workouts.value = _workouts.value.filterNot { it.id == id }
-        persist()
+        store.persistAsync(_workouts.value)
     }
 
     fun duplicate(id: String) {
@@ -58,37 +47,7 @@ class WorkoutRepository(context: Context) {
             exercises = original.exercises.map { it.copy(id = newId()) },
         )
         _workouts.value = _workouts.value + copy
-        persist()
-    }
-
-    private fun loadFromDisk(): List<Workout> {
-        return try {
-            if (file.exists()) {
-                json.decodeFromString(ListSerializer(Workout.serializer()), file.readText())
-            } else {
-                sampleWorkouts()
-            }
-        } catch (_: Exception) {
-            emptyList()
-        }
-    }
-
-    private fun persist() {
-        val snapshot = _workouts.value
-        ioScope.launch {
-            writeMutex.withLock {
-                try {
-                    val tmp = File(file.parentFile, file.name + ".tmp")
-                    tmp.writeText(json.encodeToString(ListSerializer(Workout.serializer()), snapshot))
-                    if (!tmp.renameTo(file)) {
-                        file.writeText(tmp.readText())
-                        tmp.delete()
-                    }
-                } catch (_: Exception) {
-                    // Persisting is best-effort; in-memory state stays authoritative.
-                }
-            }
-        }
+        store.persistAsync(_workouts.value)
     }
 
     private fun sampleWorkouts(): List<Workout> = listOf(

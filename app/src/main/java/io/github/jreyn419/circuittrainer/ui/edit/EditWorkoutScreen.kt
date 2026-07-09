@@ -1,6 +1,8 @@
 package io.github.jreyn419.circuittrainer.ui.edit
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,17 +18,21 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -39,10 +45,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.github.jreyn419.circuittrainer.CircuitTrainerApplication
 import io.github.jreyn419.circuittrainer.data.Exercise
+import io.github.jreyn419.circuittrainer.data.ExerciseTemplate
 import io.github.jreyn419.circuittrainer.ui.components.DurationChip
 import io.github.jreyn419.circuittrainer.ui.components.StepperRow
 import io.github.jreyn419.circuittrainer.util.formatDuration
@@ -52,16 +61,41 @@ import io.github.jreyn419.circuittrainer.util.formatDuration
 fun EditWorkoutScreen(
     workoutId: String?,
     onBack: () -> Unit,
+    onOpenLibrary: () -> Unit,
     viewModel: EditorViewModel = viewModel(factory = EditorViewModel.factory(workoutId)),
 ) {
+    val context = LocalContext.current
+    val app = context.applicationContext as CircuitTrainerApplication
+    val libraryRepository = app.exerciseLibraryRepository
+    val templates by libraryRepository.templates.collectAsStateWithLifecycle()
     val workout by viewModel.workout.collectAsStateWithLifecycle()
     var showDiscardDialog by rememberSaveable { mutableStateOf(false) }
+    var showAddSheet by rememberSaveable { mutableStateOf(false) }
 
     fun attemptBack() {
         if (viewModel.isDirty) showDiscardDialog = true else onBack()
     }
 
     BackHandler { attemptBack() }
+
+    if (showAddSheet) {
+        AddExerciseSheet(
+            templates = templates,
+            onAddBlank = {
+                viewModel.addExercise()
+                showAddSheet = false
+            },
+            onAddTemplate = { template ->
+                viewModel.addFromTemplate(template)
+                showAddSheet = false
+            },
+            onOpenLibrary = {
+                showAddSheet = false
+                onOpenLibrary()
+            },
+            onDismiss = { showAddSheet = false },
+        )
+    }
 
     if (showDiscardDialog) {
         AlertDialog(
@@ -169,11 +203,17 @@ fun EditWorkoutScreen(
                     onMoveDown = { viewModel.moveExercise(exercise.id, +1) },
                     onDuplicate = { viewModel.duplicateExercise(exercise.id) },
                     onDelete = { viewModel.removeExercise(exercise.id) },
+                    onSaveToLibrary = {
+                        libraryRepository.saveFromWorkout(
+                            exercise.name, exercise.workSeconds, exercise.restSeconds,
+                        )
+                        Toast.makeText(context, "Saved to exercise library", Toast.LENGTH_SHORT).show()
+                    },
                 )
             }
             item {
                 FilledTonalButton(
-                    onClick = viewModel::addExercise,
+                    onClick = { showAddSheet = true },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -187,6 +227,89 @@ fun EditWorkoutScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Bottom sheet for adding an exercise: pick one from the library with a single tap,
+ * or start from a blank exercise.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddExerciseSheet(
+    templates: List<ExerciseTemplate>,
+    onAddBlank: () -> Unit,
+    onAddTemplate: (ExerciseTemplate) -> Unit,
+    onOpenLibrary: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(modifier = Modifier.padding(bottom = 24.dp)) {
+            Text(
+                text = "Add exercise",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onAddBlank)
+                    .padding(horizontal = 24.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.size(16.dp))
+                Text("Blank exercise", style = MaterialTheme.typography.bodyLarge)
+            }
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 24.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "From your library",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = onOpenLibrary) { Text("Manage") }
+            }
+            if (templates.isEmpty()) {
+                Text(
+                    text = "No saved exercises yet. Tap \"Manage\" to create some.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                )
+            } else {
+                LazyColumn {
+                    items(templates.sortedBy { it.name.lowercase() }, key = { it.id }) { template ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onAddTemplate(template) }
+                                .padding(horizontal = 24.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Default.FitnessCenter,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(Modifier.size(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(template.name, style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    text = "Work ${formatDuration(template.workSeconds)} • Rest ${formatDuration(template.restSeconds)}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -206,6 +329,7 @@ private fun ExerciseCard(
     onMoveDown: () -> Unit,
     onDuplicate: () -> Unit,
     onDelete: () -> Unit,
+    onSaveToLibrary: () -> Unit,
 ) {
     Card {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -241,6 +365,9 @@ private fun ExerciseCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth(),
             ) {
+                IconButton(onClick = onSaveToLibrary, enabled = exercise.name.isNotBlank()) {
+                    Icon(Icons.Default.BookmarkAdd, contentDescription = "Save to exercise library")
+                }
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = onMoveUp, enabled = !isFirst) {
                     Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Move up")

@@ -54,6 +54,7 @@ fun HomeScreen(
     onCreateWorkout: () -> Unit,
     onEditWorkout: (String) -> Unit,
     onPlayWorkout: (String) -> Unit,
+    onOpenExercises: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val app = LocalContext.current.applicationContext as CircuitTrainerApplication
@@ -84,6 +85,9 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("Circuit Trainer") },
                 actions = {
+                    IconButton(onClick = onOpenExercises) {
+                        Icon(Icons.Default.FitnessCenter, contentDescription = "Exercise library")
+                    }
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }

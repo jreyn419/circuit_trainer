@@ -12,6 +12,9 @@ No ads, no tracking, no network access. Workouts are stored on-device as a small
   time, instead of one static duration for the whole session.
 - **Rounds** — repeat the whole circuit any number of times, with a configurable break
   between rounds.
+- **Exercise library** — create reusable exercises (with default work/rest times) in a
+  dedicated screen, then drop them into any workout with one tap from the "Add exercise"
+  sheet. Exercises in a workout can also be bookmarked back into the library.
 - **Big, clear workout player** — color-coded phases (get ready / work / rest), a large
   countdown ring, "up next" preview, and oversized controls that are easy to hit
   mid-burpee. Skip forward/back, add 10 seconds, pause any time.
@@ -46,7 +49,8 @@ also keeps the APK as a `circuit-trainer-debug` artifact under the Actions tab.
 - `app/src/main/java/io/github/jreyn419/circuittrainer/data` — models and JSON/file
   persistence (no database, keeps the app small).
 - `.../ui/home` — workout list.
-- `.../ui/edit` — workout editor (per-exercise durations, reordering, rounds).
+- `.../ui/library` — reusable exercise library.
+- `.../ui/edit` — workout editor (per-exercise durations, reordering, rounds, library picker).
 - `.../ui/play` — the workout player: timer engine (`PlayerViewModel`), screen, and
   sound/vibration cues.
 - `.../ui/settings` — sound/vibration/get-ready settings.
