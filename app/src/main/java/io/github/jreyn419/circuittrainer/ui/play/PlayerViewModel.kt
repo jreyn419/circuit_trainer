@@ -26,6 +26,8 @@ data class Segment(
     val exerciseIndex: Int,
     /** 1-based round this segment belongs to. */
     val round: Int,
+    /** How-to notes for WORK segments; empty otherwise. */
+    val description: String = "",
 )
 
 data class PlayerUiState(
@@ -44,9 +46,12 @@ data class PlayerUiState(
 ) {
     val currentSegment: Segment? get() = segments.getOrNull(segmentIndex)
 
+    /** The next WORK segment coming up after the current one, if any. */
+    val nextWorkSegment: Segment?
+        get() = segments.drop(segmentIndex + 1).firstOrNull { it.kind == PhaseKind.WORK }
+
     /** Name of the next exercise coming up after the current segment, if any. */
-    val nextWorkTitle: String?
-        get() = segments.drop(segmentIndex + 1).firstOrNull { it.kind == PhaseKind.WORK }?.title
+    val nextWorkTitle: String? get() = nextWorkSegment?.title
 }
 
 /**
@@ -252,6 +257,7 @@ class PlayerViewModel(
                             exercise.workSeconds * 1000L,
                             index,
                             round,
+                            description = exercise.description,
                         )
                     }
                     if (index != workout.exercises.lastIndex && exercise.restSeconds > 0) {

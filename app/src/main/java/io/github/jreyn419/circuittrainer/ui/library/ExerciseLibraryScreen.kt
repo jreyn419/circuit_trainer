@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.jreyn419.circuittrainer.CircuitTrainerApplication
@@ -63,8 +64,13 @@ fun ExerciseLibraryScreen(onBack: () -> Unit) {
         TemplateDialog(
             title = "New exercise",
             initial = null,
-            onConfirm = { name, work, rest ->
-                repository.upsert(ExerciseTemplate(name = name, workSeconds = work, restSeconds = rest))
+            isNameTaken = { candidate ->
+                templates.any { it.name.equals(candidate.trim(), ignoreCase = true) }
+            },
+            onConfirm = { name, description, work, rest ->
+                repository.upsert(
+                    ExerciseTemplate(name = name, description = description, workSeconds = work, restSeconds = rest)
+                )
                 showCreateDialog = false
             },
             onDismiss = { showCreateDialog = false },
@@ -75,8 +81,13 @@ fun ExerciseLibraryScreen(onBack: () -> Unit) {
         TemplateDialog(
             title = "Edit exercise",
             initial = template,
-            onConfirm = { name, work, rest ->
-                repository.upsert(template.copy(name = name, workSeconds = work, restSeconds = rest))
+            isNameTaken = { candidate ->
+                templates.any { it.id != template.id && it.name.equals(candidate.trim(), ignoreCase = true) }
+            },
+            onConfirm = { name, description, work, rest ->
+                repository.upsert(
+                    template.copy(name = name, description = description, workSeconds = work, restSeconds = rest)
+                )
                 editingTemplate = null
             },
             onDismiss = { editingTemplate = null },
@@ -172,6 +183,15 @@ fun ExerciseLibraryScreen(onBack: () -> Unit) {
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+                                if (template.description.isNotBlank()) {
+                                    Text(
+                                        text = template.description,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
                             }
                             IconButton(onClick = { editingTemplate = template }) {
                                 Icon(Icons.Default.Edit, contentDescription = "Edit ${template.name}")
@@ -195,12 +215,15 @@ fun ExerciseLibraryScreen(onBack: () -> Unit) {
 private fun TemplateDialog(
     title: String,
     initial: ExerciseTemplate?,
-    onConfirm: (name: String, workSeconds: Int, restSeconds: Int) -> Unit,
+    isNameTaken: (String) -> Boolean,
+    onConfirm: (name: String, description: String, workSeconds: Int, restSeconds: Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var name by rememberSaveable { mutableStateOf(initial?.name.orEmpty()) }
+    var description by rememberSaveable { mutableStateOf(initial?.description.orEmpty()) }
     var workSeconds by rememberSaveable { mutableStateOf(initial?.workSeconds ?: 40) }
     var restSeconds by rememberSaveable { mutableStateOf(initial?.restSeconds ?: 15) }
+    val nameTaken = isNameTaken(name)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -212,8 +235,21 @@ private fun TemplateDialog(
                     onValueChange = { name = it },
                     label = { Text("Name") },
                     placeholder = { Text("e.g. Push-ups") },
+                    isError = nameTaken,
+                    supportingText = {
+                        if (nameTaken) Text("This name is already in the library")
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description (optional)") },
+                    placeholder = { Text("Form cues, target muscles, ...") },
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    minLines = 2,
+                    maxLines = 4,
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
@@ -241,8 +277,8 @@ private fun TemplateDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = { onConfirm(name.trim(), workSeconds, restSeconds) },
-                enabled = name.isNotBlank(),
+                onClick = { onConfirm(name.trim(), description.trim(), workSeconds, restSeconds) },
+                enabled = name.isNotBlank() && !nameTaken,
             ) { Text("Save") }
         },
         dismissButton = {

@@ -9,6 +9,8 @@ fun newId(): String = UUID.randomUUID().toString()
 data class Exercise(
     val id: String = newId(),
     val name: String = "",
+    /** Optional how-to notes, viewable from the workout player. */
+    val description: String = "",
     /** Time spent working on this exercise, in seconds. Set per exercise. */
     val workSeconds: Int = 40,
     /** Rest after this exercise, in seconds. Set per exercise. */
@@ -23,6 +25,8 @@ data class Exercise(
 data class ExerciseTemplate(
     val id: String = newId(),
     val name: String = "",
+    /** Optional how-to notes, copied into workouts alongside the durations. */
+    val description: String = "",
     val workSeconds: Int = 40,
     val restSeconds: Int = 15,
 )
