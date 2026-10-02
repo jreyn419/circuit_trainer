@@ -117,10 +117,11 @@ fun PlayerScreen(
                 if (wasRunningBeforeDialog) viewModel.resume()
             },
             title = { Text("End workout?") },
-            text = { Text("Your progress in this session will be lost.") },
+            text = { Text("The session stops here. Anything you've done so far is kept in your history.") },
             confirmButton = {
                 TextButton(onClick = {
                     showExitDialog = false
+                    viewModel.abandon()
                     onExit()
                 }) { Text("End workout") }
             },
@@ -402,6 +403,12 @@ private fun FinishedContent(
         Text(
             text = "Active time: ${formatDuration((state.elapsedActiveMillis / 1000).toInt())}",
             style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "Saved to your history.",
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(32.dp))

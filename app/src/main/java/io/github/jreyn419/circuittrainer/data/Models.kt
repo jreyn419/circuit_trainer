@@ -54,3 +54,32 @@ data class Workout(
         return total
     }
 }
+
+/**
+ * One run of a workout, recorded when the player finishes or when the user ends a
+ * session after doing real work. Names and durations are snapshots: the workout
+ * may be edited or deleted later and the history stays truthful.
+ */
+@Serializable
+data class WorkoutSession(
+    val id: String = newId(),
+    val workoutId: String = "",
+    val workoutName: String = "",
+    /** Wall-clock start, epoch milliseconds. */
+    val startedAtMillis: Long = 0L,
+    /** Wall-clock end, epoch milliseconds. */
+    val endedAtMillis: Long = 0L,
+    /** Time the timer was actually running (pauses excluded). */
+    val activeMillis: Long = 0L,
+    /** The workout's planned duration at the time, see [Workout.totalSeconds]. */
+    val plannedSeconds: Int = 0,
+    /** True when every segment was played through; false when the session was ended early. */
+    val completed: Boolean = false,
+    /** Exercise intervals finished, out of [workSegmentsTotal]. */
+    val workSegmentsDone: Int = 0,
+    val workSegmentsTotal: Int = 0,
+    /** Calendar event this session was started from (suite contract), if any. */
+    val plannedEventId: String? = null,
+    /** Occurrence date of that event, YYYY-MM-DD, if any. */
+    val plannedDate: String? = null,
+)

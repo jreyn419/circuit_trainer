@@ -7,14 +7,20 @@ import kotlinx.serialization.json.Json
 @Serializable
 data class BackupData(
     val app: String = "circuit-trainer",
-    val format: Int = 1,
+    /** 1: workouts, library, settings. 2: adds [sessions]. Readers accept both. */
+    val format: Int = BACKUP_FORMAT,
     val exportedAtMillis: Long = 0L,
     val workouts: List<Workout> = emptyList(),
     val exerciseLibrary: List<ExerciseTemplate> = emptyList(),
+    /** Workout history; absent in format-1 files. */
+    val sessions: List<WorkoutSession> = emptyList(),
     val settings: Settings? = null,
 ) {
-    val isEmpty: Boolean get() = workouts.isEmpty() && exerciseLibrary.isEmpty()
+    val isEmpty: Boolean
+        get() = workouts.isEmpty() && exerciseLibrary.isEmpty() && sessions.isEmpty()
 }
+
+const val BACKUP_FORMAT = 2
 
 enum class ImportMode {
     /** Upsert by id: matching entries are updated, new ones added, nothing deleted. */
@@ -27,6 +33,7 @@ enum class ImportMode {
 class BackupManager(
     private val workoutRepository: WorkoutRepository,
     private val exerciseLibraryRepository: ExerciseLibraryRepository,
+    private val sessionRepository: SessionRepository,
     private val settingsRepository: SettingsRepository,
 ) {
     private val json = Json {
@@ -41,6 +48,7 @@ class BackupManager(
             exportedAtMillis = System.currentTimeMillis(),
             workouts = workoutRepository.workouts.value,
             exerciseLibrary = exerciseLibraryRepository.templates.value,
+            sessions = sessionRepository.sessions.value,
             settings = settingsRepository.settings.value,
         ),
     )
@@ -57,10 +65,12 @@ class BackupManager(
             ImportMode.MERGE -> {
                 workoutRepository.mergeById(backup.workouts)
                 exerciseLibraryRepository.mergeById(backup.exerciseLibrary)
+                sessionRepository.mergeById(backup.sessions)
             }
             ImportMode.REPLACE -> {
                 workoutRepository.replaceAll(backup.workouts)
                 exerciseLibraryRepository.replaceAll(backup.exerciseLibrary)
+                sessionRepository.replaceAll(backup.sessions)
                 backup.settings?.let { restored -> settingsRepository.update { restored } }
             }
         }

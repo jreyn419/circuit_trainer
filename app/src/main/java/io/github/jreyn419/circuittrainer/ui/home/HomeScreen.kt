@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
@@ -55,6 +56,7 @@ fun HomeScreen(
     onEditWorkout: (String) -> Unit,
     onPlayWorkout: (String) -> Unit,
     onOpenExercises: () -> Unit,
+    onOpenHistory: () -> Unit,
     onOpenSettings: () -> Unit,
 ) {
     val app = LocalContext.current.applicationContext as CircuitTrainerApplication
@@ -87,6 +89,9 @@ fun HomeScreen(
                 actions = {
                     IconButton(onClick = onOpenExercises) {
                         Icon(Icons.Default.FitnessCenter, contentDescription = "Exercise library")
+                    }
+                    IconButton(onClick = onOpenHistory) {
+                        Icon(Icons.Default.History, contentDescription = "Workout history")
                     }
                     IconButton(onClick = onOpenSettings) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")

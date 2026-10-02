@@ -112,10 +112,11 @@ fun SettingsScreen(onBack: () -> Unit) {
             title = { Text("Import backup") },
             text = {
                 Text(
-                    "This backup contains ${backup.workouts.size} workout(s) and " +
-                        "${backup.exerciseLibrary.size} library exercise(s).\n\n" +
+                    "This backup contains ${backup.workouts.size} workout(s), " +
+                        "${backup.exerciseLibrary.size} library exercise(s) and " +
+                        "${backup.sessions.size} history entr${if (backup.sessions.size == 1) "y" else "ies"}.\n\n" +
                         "Merge keeps your current data and adds/updates entries from the backup. " +
-                        "Replace deletes your current workouts and library first."
+                        "Replace deletes your current workouts, library and history first."
                 )
             },
             confirmButton = {
@@ -195,7 +196,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             HorizontalDivider()
             ActionRow(
                 title = "Export data",
-                subtitle = "Save workouts, exercises and settings to a JSON file",
+                subtitle = "Save workouts, exercises, history and settings to a JSON file",
                 icon = { Icon(Icons.Default.FileUpload, contentDescription = null) },
                 onClick = {
                     val date = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())

@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.jreyn419.circuittrainer.CircuitTrainerApplication
 import io.github.jreyn419.circuittrainer.data.Workout
+import io.github.jreyn419.circuittrainer.data.WorkoutSession
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,11 +64,21 @@ data class PlayerUiState(
  */
 class PlayerViewModel(
     application: CircuitTrainerApplication,
-    workoutId: String,
+    private val workoutId: String,
+    /** Calendar event this session was started from (suite contract), if any. */
+    private val plannedEventId: String? = null,
+    /** Occurrence date of that event, YYYY-MM-DD, if any. */
+    private val plannedDate: String? = null,
 ) : AndroidViewModel(application) {
 
     private val settingsRepository = application.settingsRepository
+    private val sessionRepository = application.sessionRepository
     private val feedback = Feedback(application)
+
+    private var plannedSeconds = 0
+    private var startedAtMillis = System.currentTimeMillis()
+    /** Guards against logging the same run twice (finish + exit, or exit twice). */
+    private var sessionRecorded = false
 
     private val _state = MutableStateFlow(PlayerUiState())
     val state: StateFlow<PlayerUiState> = _state.asStateFlow()
@@ -86,6 +97,7 @@ class PlayerViewModel(
             _state.value = PlayerUiState(workoutMissing = true)
         } else {
             val segments = buildSegments(workout, settingsRepository.settings.value.prepSeconds)
+            plannedSeconds = workout.totalSeconds()
             _state.value = PlayerUiState(
                 workoutName = workout.name,
                 segments = segments,
@@ -154,6 +166,9 @@ class PlayerViewModel(
         if (s.segments.isEmpty()) return
         tickerJob?.cancel()
         lastBeepSecond = 0
+        // A fresh run: the previous one (if any) has already been written to history.
+        startedAtMillis = System.currentTimeMillis()
+        sessionRecorded = false
         _state.value = s.copy(
             segmentIndex = 0,
             remainingMillis = s.segments.first().durationMillis,
@@ -202,6 +217,7 @@ class PlayerViewModel(
         if (nextIndex >= base.segments.size) {
             tickerJob?.cancel()
             _state.value = base.copy(remainingMillis = 0L, isRunning = false, isFinished = true)
+            recordSession(completed = true)
             feedback.workoutFinished(soundEnabled, vibrationEnabled)
         } else {
             val segment = base.segments[nextIndex]
@@ -217,7 +233,51 @@ class PlayerViewModel(
         val s = _state.value
         tickerJob?.cancel()
         _state.value = s.copy(remainingMillis = 0L, isRunning = false, isFinished = true)
+        recordSession(completed = true)
         feedback.workoutFinished(soundEnabled, vibrationEnabled)
+    }
+
+    /**
+     * The user ended the session early. Logged as an abandoned run when real work was
+     * done; a session ended within the first seconds (a mis-tap) leaves no trace.
+     */
+    fun abandon() {
+        val s = _state.value
+        if (s.isFinished || s.workoutMissing || sessionRecorded) return
+        tickerJob?.cancel()
+        _state.value = s.copy(isRunning = false)
+        if (s.elapsedActiveMillis >= MIN_ABANDONED_ACTIVE_MILLIS) {
+            recordSession(completed = false)
+        } else {
+            sessionRecorded = true
+        }
+    }
+
+    private fun recordSession(completed: Boolean) {
+        if (sessionRecorded) return
+        sessionRecorded = true
+        val s = _state.value
+        val workSegments = s.segments.count { it.kind == PhaseKind.WORK }
+        val done = if (completed) {
+            workSegments
+        } else {
+            s.segments.take(s.segmentIndex).count { it.kind == PhaseKind.WORK }
+        }
+        sessionRepository.add(
+            WorkoutSession(
+                workoutId = workoutId,
+                workoutName = s.workoutName,
+                startedAtMillis = startedAtMillis,
+                endedAtMillis = System.currentTimeMillis(),
+                activeMillis = s.elapsedActiveMillis,
+                plannedSeconds = plannedSeconds,
+                completed = completed,
+                workSegmentsDone = done,
+                workSegmentsTotal = workSegments,
+                plannedEventId = plannedEventId,
+                plannedDate = plannedDate,
+            )
+        )
     }
 
     private fun goToSegment(index: Int) {
@@ -234,11 +294,18 @@ class PlayerViewModel(
     }
 
     companion object {
-        fun factory(workoutId: String): ViewModelProvider.Factory = viewModelFactory {
+        /** Sessions ended with less active time than this are not worth a history entry. */
+        const val MIN_ABANDONED_ACTIVE_MILLIS = 30_000L
+
+        fun factory(
+            workoutId: String,
+            plannedEventId: String? = null,
+            plannedDate: String? = null,
+        ): ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]
                         as CircuitTrainerApplication
-                PlayerViewModel(app, workoutId)
+                PlayerViewModel(app, workoutId, plannedEventId, plannedDate)
             }
         }
 

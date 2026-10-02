@@ -31,8 +31,13 @@ No ads, no tracking, no network access. Workouts are stored on-device as a small
   so the display can never drift, freeze, or get stuck at 0.
 - Sound (3-2-1 beeps, phase-change tones) and vibration cues, each individually
   toggleable, plus a configurable get-ready countdown.
-- **Export / import** — back up workouts, the exercise library and settings to a single
-  JSON file from Settings → Data, and restore it on any device (merge or full replace).
+- **History** — every finished workout is logged with its start time and active time;
+  a session you end early after real work is kept too, marked with how many intervals
+  you got through. The history screen shows this week's and all-time totals, grouped
+  by day, with "do it again" and delete per entry.
+- **Export / import** — back up workouts, the exercise library, history and settings to
+  a single JSON file from Settings → Data, and restore it on any device (merge or full
+  replace).
 - Keeps the screen on during a session; survives screen rotation without losing progress.
 - Material 3 UI with dark theme and dynamic color (Android 12+).
 
@@ -55,6 +60,7 @@ also keeps the APK as a `circuit-trainer-debug` artifact under the Actions tab.
 - `app/src/main/java/io/github/jreyn419/circuittrainer/data` — models and JSON/file
   persistence (no database, keeps the app small).
 - `.../ui/home` — workout list.
+- `.../ui/history` — workout history (sessions recorded by the player).
 - `.../ui/library` — reusable exercise library.
 - `.../ui/edit` — workout editor (per-exercise durations, reordering, rounds, library picker).
 - `.../ui/play` — the workout player: timer engine (`PlayerViewModel`), screen, and

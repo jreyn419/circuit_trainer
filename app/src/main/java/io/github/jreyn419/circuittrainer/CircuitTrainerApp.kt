@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.jreyn419.circuittrainer.ui.edit.EditWorkoutScreen
+import io.github.jreyn419.circuittrainer.ui.history.HistoryScreen
 import io.github.jreyn419.circuittrainer.ui.home.HomeScreen
 import io.github.jreyn419.circuittrainer.ui.library.ExerciseLibraryScreen
 import io.github.jreyn419.circuittrainer.ui.play.PlayerScreen
@@ -22,7 +23,14 @@ fun CircuitTrainerApp(navController: NavHostController = rememberNavController()
                 onEditWorkout = { id -> navController.navigate("edit/$id") },
                 onPlayWorkout = { id -> navController.navigate("play/$id") },
                 onOpenExercises = { navController.navigate("exercises") },
+                onOpenHistory = { navController.navigate("history") },
                 onOpenSettings = { navController.navigate("settings") },
+            )
+        }
+        composable("history") {
+            HistoryScreen(
+                onBack = { navController.popBackStack() },
+                onPlayWorkout = { id -> navController.navigate("play/$id") },
             )
         }
         composable("edit/{workoutId}") { entry ->
